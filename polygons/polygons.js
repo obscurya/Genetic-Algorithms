@@ -18,7 +18,7 @@ var canvas = document.getElementById('canvas'),
 
 function clear(canv, ctx) {
     ctx.clearRect(0, 0, canv.width, canv.height);
-    ctx.fillStyle = '#fff';
+    ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, canv.width, canv.height);
 }
 
@@ -26,15 +26,18 @@ function Polygon(genes) {
     var color = random(0, 255);
 
     this.color = [];
+    this.alpha = color;
     this.shape = [];
 
-    for (var i = 0; i < 4; i++) {
+    for (var i = 0; i < 3; i++) {
         this.color.push(color);
     }
 
     for (var i = 0; i < vertices; i++) {
         this.shape.push(random(0, canvas.width));
         this.shape.push(random(0, canvas.height));
+        // this.shape.push(random(canvas.width / 2 - 10, canvas.width / 2 + 10));
+        // this.shape.push(random(canvas.height / 2 - 10, canvas.height / 2 + 10));
     }
 }
 
@@ -48,13 +51,21 @@ function calcFitness() {
             newSum = 0;
 
         for (var j = 0; j < pixel.length; j++) {
-            var arr = [pixel[j], newPixel[j]];
+            var arr = [pixel[j], newPixel[j]],
+                res = 0;
 
             arr.sort(function (a, b) {
                 return b - a;
             });
 
-            newSum += (1 - (arr[0] - arr[1]) / arr[0]);
+
+            if (arr[0] == 0 && arr[1] == 0) {
+                res = 0;
+            } else {
+                res = 1 - (arr[0] - arr[1]) / arr[0];
+            }
+
+            newSum += res;
         }
 
         newSum /= pixel.length;
@@ -71,7 +82,7 @@ function calcFitness() {
 
 function mutate() {
     var i = index,
-        j = random(0, 1),
+        j = random(0, 2),
         k = 0;
 
     var tmp = [];
@@ -80,14 +91,13 @@ function mutate() {
         tmp[n] = {};
 
         tmp[n].color = polygons[n].color.slice();
+        tmp[n].alpha = polygons[n].alpha;
         tmp[n].shape = polygons[n].shape.slice();
     }
 
     if (j == 0) {
-        k = random(0, tmp[i].color.length - 1);
-
-        tmp[i].color[k] = random(0, 255);
-    } else {
+        tmp[i].color = colors[random(0, colors.length - 1)].slice();
+    } else if (j == 1) {
         k = random(0, tmp[i].shape.length - 1);
 
         if (k % 2 == 0) {
@@ -95,9 +105,11 @@ function mutate() {
         } else {
             tmp[i].shape[k] = random(0, canvas.height);
         }
+    } else if (j == 2) {
+        tmp[i].alpha = random(0, 255);
     }
 
-    draw(canvas, c, tmp);
+    draw(false, canvas, c, tmp);
 
     var fitness = calcFitness();
 
@@ -119,28 +131,34 @@ function create() {
         polygons[i] = new Polygon;
     }
 
-    draw(canvas, c, polygons);
+    draw(false, canvas, c, polygons);
 
     polygons.fitness = calcFitness();
 }
 
-function draw(canv, ctx, poly, sc) {
+function draw(debug, canv, ctx, poly, sc) {
     if (!sc) sc = 1;
 
     clear(canv, ctx);
 
     for (var i = 0; i < polygonsNumber; i++) {
-        var colors = poly[i].color,
+        var rgbs = poly[i].color,
+            alpha = poly[i].alpha,
             shape = poly[i].shape;
 
         ctx.beginPath();
-        ctx.fillStyle = color(colors[0], colors[1], colors[2], colors[3] / 255);
+        ctx.fillStyle = color(rgbs[0], rgbs[1], rgbs[2], alpha / 255);
+        if (debug) {
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 0.5;
+        }
         ctx.moveTo(shape[0] * sc, shape[1] * sc);
         for (var j = 2; j < shape.length; j += 2) {
             ctx.lineTo(shape[j] * sc, shape[j + 1] * sc);
         }
-        ctx.fill();
         ctx.closePath();
+        ctx.fill();
+        if (debug) ctx.stroke();
     }
 }
 
@@ -159,6 +177,37 @@ function getPixels(array) {
     }
 
     return pixels;
+}
+
+function getColors(array) {
+    var rgb = [],
+        k = 3;
+
+    for (var i = 0; i < array.length; i += 4) {
+        var color = [];
+
+        color.push(array[i]);
+        color.push(array[i + 1]);
+        color.push(array[i + 2]);
+
+        if (rgb.length) {
+            var add = true;
+
+            for (var j = 0; j < rgb.length; j++) {
+                if (rgb[j][0] == color[0] && rgb[j][1] == color[1] && rgb[j][2] == color[2]) {
+                    add = false;
+                }
+            }
+
+            if (add) {
+                rgb.push(color);
+            }
+        } else {
+            rgb.push(color);
+        }
+    }
+
+    return rgb;
 }
 
 function init(scale) {
@@ -189,7 +238,8 @@ var polygonsNumber = 128,
     polygons = [];
 
 var img = new Image(),
-    imgPixels = [];
+    imgPixels = [],
+    colors = [];
 
 var changes = 0,
     mutations = 0,
@@ -202,33 +252,36 @@ img.onload = function () {
 
     o.drawImage(img, 0, 0, original.width, original.height);
     imgPixels = getPixels(o.getImageData(0, 0, canvas.width, canvas.height).data);
+    colors = getColors(o.getImageData(0, 0, canvas.width, canvas.height).data);
 
     create();
 
     setInterval(function () {
 
-        mutate();
+        if (polygons.fitness != 1) {
+            mutate();
 
-        draw(bestCanvas, b, polygons, scale);
+            draw(false, bestCanvas, b, polygons, scale);
 
-        var now = new Date().getTime(),
-            distance = now - startTime,
-            days = Math.floor(distance / (1000 * 60 * 60 * 24)),
-            hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
-            minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
-            seconds = Math.floor((distance % (1000 * 60)) / 1000);
+            var now = new Date().getTime(),
+                distance = now - startTime,
+                days = Math.floor(distance / (1000 * 60 * 60 * 24)),
+                hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+                minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
+                seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
-        var string = '';
+            var string = '';
 
-        string += 'Fitness: ' + (polygons.fitness * 100).toFixed(2) + '%' + '<br>';
-        string += 'Changes: ' + changes + '<br>';
-        string += 'Mutations: ' + mutations + '<br>';
-        string += 'Polygons: ' + polygonsNumber + '<br>';
-        string += 'Vertices: ' + vertices + '<br>';
-        string += 'Current polygon index: ' + index + '<br>';
-        string += 'Time: ' + days + 'd ' + hours + 'h ' + minutes + 'm ' + seconds + 's';
+            string += 'Fitness: ' + (polygons.fitness * 100).toFixed(2) + '%' + '<br>';
+            string += 'Changes: ' + changes + '<br>';
+            string += 'Mutations: ' + mutations + '<br>';
+            string += 'Polygons: ' + polygonsNumber + '<br>';
+            string += 'Vertices: ' + vertices + '<br>';
+            string += 'Current polygon index: ' + index + '<br>';
+            string += 'Time: ' + days + 'd ' + hours + 'h ' + minutes + 'm ' + seconds + 's';
 
-        div.innerHTML = string;
+            div.innerHTML = string;
+        }
 
     }, 0);
 
