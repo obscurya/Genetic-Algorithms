@@ -1,0 +1,25 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font: 16px sans-serif;
+}
+
+body {
+    padding: 30px;
+    font-size: 0;
+}
+
+canvas {
+    border: 1px solid #000;
+    margin: 10px;
+    vertical-align: top;
+}
+
+.inputs p {
+    margin: 10px;
+}
+
+.inputs p span {
+    margin-right: 10px;
+}

@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Image Reproduction</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <canvas id="original"></canvas>
+    <canvas id="mutation"></canvas>
+    <canvas id="result"></canvas>
+    <canvas id="graph"></canvas>
+    <div class="inputs">
+        <p><span>Scale</span><input id="scale" value="6"></p>
+        <p><span>Polygons count</span><input id="polygonsCount" value="64"></p>
+        <p><span>Vertices</span><input id="vertices" value="4"></p>
+        <p><span>Img URL</span><input id="imgURL" value="https://pp.userapi.com/c824604/v824604881/9cff6/ZDwHZ_VtjTw.jpg"></p>
+        <p><button onclick="start();">Start</button></p>
+    </div>
+    <script src="reproduce.js"></script>
+</body>
+</html>
