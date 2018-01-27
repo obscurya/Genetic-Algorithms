@@ -249,5 +249,16 @@ function start() {
         animation = requestAnimationFrame(draw);
     };
 
-    img.src = String(document.getElementById('imgURL').value);
+    var file = document.getElementById('imgLoad').files[0],
+        reader = new FileReader();
+
+    reader.onloadend = function () {
+        img.src = reader.result;
+    }
+
+    if (file) {
+        reader.readAsDataURL(file);
+    } else {
+        img.src = String(document.getElementById('imgURL').value);
+    }
 }
