@@ -63,11 +63,20 @@ class Polygon {
     }
 }
 
-function create() {
-    for (var i = 0; i < polygonsCount; i++) {
-        polygons.push(new Polygon);
+function create(dna) {
+    if (dna) {
+        polygons.fitness = dna[3];
+        dna.splice(0, 4);
+        for (var i = 0; i < polygonsCount; i++) {
+            var polygonDNA = dna.splice(0, 4 + vertices * 2);
+            polygons.push(new Polygon(polygonDNA));
+        }
+    } else {
+        polygons.fitness = 0;
+        for (var i = 0; i < polygonsCount; i++) {
+            polygons.push(new Polygon);
+        }
     }
-    polygons.fitness = 0;
 }
 
 function mutate() {
@@ -213,6 +222,15 @@ function start() {
         cancelAnimationFrame(animation);
     }
 
+    var dna = document.getElementById('dnaInput').value;
+
+    if (dna) {
+        dna = dna.split(' ');
+        for (var i = 0; i < dna.length; i++) {
+            dna[i] = Number(dna[i]);
+        }
+    }
+
     img = new Image();
 
     img.onload = function () {
@@ -221,10 +239,10 @@ function start() {
         scale = Number(document.getElementById('scale').value);
         imgData = [];
         polygons = [];
-        polygonsCount = Number(document.getElementById('polygonsCount').value);
-        vertices = Number(document.getElementById('vertices').value);
+        polygonsCount = (dna) ? dna[0] : Number(document.getElementById('polygonsCount').value);
+        vertices = (dna) ? dna[1] : Number(document.getElementById('vertices').value);
         fitnesses = [];
-        mutations = 0;
+        mutations = (dna) ? dna[2] : 0;
 
         var imgRatio = img.width / img.height;
 
@@ -246,7 +264,7 @@ function start() {
         originalCtx.drawImage(img, 0, 0, width, height);
         imgData = originalCtx.getImageData(0, 0, width, height).data;
 
-        create();
+        create(dna);
 
         animation = requestAnimationFrame(draw);
     };
@@ -261,6 +279,27 @@ function start() {
     if (file) {
         reader.readAsDataURL(file);
     } else {
-        // img.src = String(document.getElementById('imgURL').value);
+        // img.src = 'girl.jpg';
+    }
+}
+
+// start();
+
+function save() {
+    if (polygons) {
+        var dna = [];
+
+        dna.push(polygons.length);
+        dna.push(vertices);
+        dna.push(mutations);
+        dna.push(polygons.fitness);
+
+        for (var i = 0; i < polygons.length; i++) {
+            for (var j = 0; j < polygons[i].dna.length; j++) {
+                dna.push(polygons[i].dna[j]);
+            }
+        }
+
+        document.getElementById('dnaOutput').value = dna.join(' ');
     }
 }

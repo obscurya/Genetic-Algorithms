@@ -6,8 +6,11 @@
 }
 
 body {
-    padding: 30px;
     font-size: 0;
+}
+
+.wrapper {
+    margin: 30px;
 }
 
 canvas {
