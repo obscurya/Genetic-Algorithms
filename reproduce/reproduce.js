@@ -1,3 +1,6 @@
+var requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.msRequestAnimationFrame,
+    cancelAnimationFrame = window.cancelAnimationFrame || window.mozCancelAnimationFrame;
+
 function color(rgba) {
     return 'rgba(' + rgba[0] + ', ' + rgba[1] + ', ' + rgba[2] + ', ' + rgba[3] / 255 + ')';
 }
@@ -36,7 +39,6 @@ class Polygon {
             }
 
             this.dna.push(0);
-            // this.dna.push(255);
 
             for (var i = 0; i < vertices; i++) {
                 this.dna.push(random(0, width), random(0, height));
