@@ -261,6 +261,6 @@ function start() {
     if (file) {
         reader.readAsDataURL(file);
     } else {
-        img.src = String(document.getElementById('imgURL').value);
+        // img.src = String(document.getElementById('imgURL').value);
     }
 }
