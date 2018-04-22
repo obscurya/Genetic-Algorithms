@@ -65,8 +65,8 @@ class Polygon {
 
 function create(dna) {
     if (dna) {
-        polygons.fitness = dna[3];
-        dna.splice(0, 4);
+        polygons.fitness = dna[4];
+        dna.splice(0, 5);
         for (var i = 0; i < polygonsCount; i++) {
             var polygonDNA = dna.splice(0, 4 + vertices * 2);
             polygons.push(new Polygon(polygonDNA));
@@ -77,6 +77,7 @@ function create(dna) {
             polygons.push(new Polygon);
         }
     }
+    fitnesses.push(polygons.fitness);
 }
 
 function mutate() {
@@ -106,12 +107,21 @@ function mutate() {
 
     if (tmp.fitness >= polygons.fitness) {
         if (tmp.fitness > polygons.fitness) {
-            fitnesses.push(tmp.fitness);
+            improvements++;
         }
         polygons = tmp;
     }
 
     mutations++;
+
+    if (mutations % 60 == 0) {
+        fitnesses.push(polygons.fitness);
+        ips.push(improvements);
+        improvements = 0;
+        if (ips[ips.length - 1] > ipsMax) {
+            ipsMax = ips[ips.length - 1];
+        }
+    }
 }
 
 function getFitness(array) {
@@ -132,16 +142,31 @@ function getFitness(array) {
 }
 
 function drawGraph(ctx) {
+    ctx.lineWidth = 4;
+
     var step = graphCanvas.width / fitnesses.length,
         index = 0;
 
-    ctx.lineWidth = 4;
     ctx.strokeStyle = color([0, 0, 255, 255 / 4]);
 
     ctx.beginPath();
     ctx.moveTo(-100, graphCanvas.height);
     for (var i = 0; i < graphCanvas.width; i += step) {
         ctx.lineTo(i, graphCanvas.height * (1 - fitnesses[index]));
+        index++;
+    }
+    ctx.stroke();
+    ctx.closePath();
+
+    var step = graphCanvas.width / ips.length,
+        index = 0;
+
+    ctx.strokeStyle = color([255, 0, 0, 255 / 4]);
+
+    ctx.beginPath();
+    ctx.moveTo(-100, graphCanvas.height);
+    for (var i = 0; i < graphCanvas.width; i += step) {
+        ctx.lineTo(i, graphCanvas.height * (1 - ips[index] / ipsMax));
         index++;
     }
     ctx.stroke();
@@ -155,21 +180,22 @@ function drawGraph(ctx) {
 
     var text = [];
 
-    text.push('Fitness: ' + (polygons.fitness * 100).toFixed(2) + '%');
-    text.push('Improvements: ' + fitnesses.length);
+    text.push('Fitness: ' + polygons.fitness);
     text.push('Mutations: ' + mutations);
+    // text.push('Improvements: ' + fitnesses.length);
+    text.push('Imp. per second: ' + ips[ips.length - 1]);
     text.push('Polygons: ' + polygonsCount);
     text.push('Vertices: ' + vertices);
     text.push('Time: ' + days + 'd ' + hours + 'h ' + minutes + 'm ' + seconds + 's');
 
     ctx.fillStyle = color([0, 0, 0, 255]);
-    ctx.font = '16px sans-serif';
+    ctx.font = 'bold 12px sans-serif';
 
     var y = 30;
 
     for (var i = 0; i < text.length; i++) {
-        ctx.fillText(text[i], 10, y);
-        y += 20;
+        ctx.fillText(text[i], 10, Math.floor(y));
+        y += 12 * 1.5;
     }
 }
 
@@ -188,8 +214,10 @@ function draw() {
 
     drawGraph(graphCtx);
 
-    if (fitnesses.length >= 1000) fitnesses = [];
-
+    if (mutations % (60 * 60) == 0) {
+        fitnesses = [fitnesses[fitnesses.length - 1]];
+        ips = [ips[ips.length - 1]];
+    }
     if (polygons.fitness < 1) animation = requestAnimationFrame(draw);
 }
 
@@ -217,7 +245,9 @@ var polygons,
     vertices;
 
 var fitnesses,
-    mutations;
+    mutations,
+    improvements,
+    ips;
 
 function start() {
     if (animation) {
@@ -245,6 +275,9 @@ function start() {
         vertices = (dna) ? dna[1] : Number(document.getElementById('vertices').value);
         fitnesses = [];
         mutations = (dna) ? dna[2] : 0;
+        improvements = 0;
+        ips = [0];
+        ipsMax = (dna) ? dna[3] : 0;
 
         var imgRatio = img.width / img.height;
 
@@ -281,11 +314,11 @@ function start() {
     if (file) {
         reader.readAsDataURL(file);
     } else {
-        img.src = 'girl.jpg';
+        // img.src = 'girl.jpg';
     }
 }
 
-start();
+// start();
 
 function save() {
     if (polygons) {
@@ -294,6 +327,7 @@ function save() {
         dna.push(polygons.length);
         dna.push(vertices);
         dna.push(mutations);
+        dna.push(ipsMax);
         dna.push(polygons.fitness);
 
         for (var i = 0; i < polygons.length; i++) {

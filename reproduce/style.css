@@ -2,7 +2,7 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font: 16px sans-serif;
+    font: 12px sans-serif;
 }
 
 body {
@@ -20,7 +20,7 @@ canvas {
 }
 
 .inputs p {
-    margin: 10px;
+    margin: 5px 10px;
 }
 
 .inputs p span {
